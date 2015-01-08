@@ -1,0 +1,49 @@
+NAME="openssl098"
+VERSION=0.9.8zc
+RELEASE=1
+CATEGORY="Net"
+SUMMARY="A general purpose cryptography toolkit with TLS implementation"
+DESCRIPTION="The OpenSSL toolkit provides support for secure communications between
+machines. OpenSSL includes a certificate management tool and shared
+libraries which provide various cryptographic algorithms and protocols."
+HOMEPAGE="http://www.openssl.org/"
+SRC_URI="ftp://ftp.openssl.org/source/openssl-${VERSION}.tar.gz"
+SRC_DIR="openssl-${VERSION}"
+PATCH_URI="http://pkgs.fedoraproject.org/cgit/openssl.git/plain/openssl-0.9.8m-enginesdir.patch?h=f11"
+
+# this is only for backwards compatibilty, predates cygwin64
+ARCH=i686
+
+PKG_NAMES="libopenssl098"
+openssl_CONTENTS="etc usr/bin/openssl.exe usr/bin/c_rehash
+		  usr/share/doc usr/ssl/certs usr/ssl/man/man[157] usr/ssl/misc
+		  usr/ssl/openssl.cnf usr/ssl/private"
+openssl_devel_SUMMARY="${SUMMARY} (development)"
+openssl_devel_CONTENTS="usr/include usr/lib/*.a usr/lib/pkgconfig usr/ssl/man/man3"
+libopenssl098_SUMMARY="${SUMMARY} (runtime)"
+libopenssl098_REQUIRES="ca-certificates"
+libopenssl098_CONTENTS="usr/bin/cyg*-0.9.8.dll usr/lib/${P%[a-z]}/engines/"
+PKG_IGNORE=${openssl_CONTENTS}" "${openssl_devel_CONTENTS}
+
+MAKEOPTS+=" -j1"
+
+src_compile() {
+	cd ${S}
+	lndirs
+	cd ${B}
+	./config --prefix=/usr --enginesdir=/usr/lib/${P%[a-z]}/engines \
+		shared zlib no-idea no-rc5 no-krb5
+	cygmake depend
+	cygmake
+}
+
+src_install() {
+	cd ${B}
+	cygmake install INSTALL_PREFIX=${D}
+
+	dodir /usr/lib/${P%[a-z]}
+	mv ${D}/usr/lib/engines ${D}/usr/lib/${P%[a-z]}/
+}
+
+DOCS="CHANGES.SSLeay INSTALL"
+KEEPDIRS="/usr/ssl/private"
